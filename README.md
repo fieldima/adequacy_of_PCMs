@@ -1,6 +1,6 @@
-# fiels_workbench
+# The Adequacy of the most Commonly-Used Models in Phylogenetic Comparative Methods for Gene Expression Data Sets
 
-This repository contains my analysis of adequacy for a series of gene expression data sets. Links to the repositories for my analysis on data sets not contained in this repository are in the Separate Repositories category. All the gene expression data sets used in my total analysis are summarized in the table at the bottom. The directories are as follows:
+This repository contains my analysis of model adequacy for a series of gene expression data sets. Links to the repositories for my analysis on data sets not contained in this repository are in the Separate Repositories category. All the gene expression data sets used in my total analysis are summarized in the table at the bottom. The directories are as follows:
 
 ### Gene Expression Data Analysis
 
