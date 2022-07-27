@@ -1,0 +1,10 @@
+Study,Normalization,Result
+Cichlids,TPM,Inadequate
+Fishes,FPKM,Inadequate
+Butterflies,FPKM,Adequate
+Mammal,RPKM,Relatively inadequate
+Snakes,FPKM (Percentage of total toxin transcript expression),Relatively inadequate
+KMRR,RPKM,Inadequate
+Amalgam,TMM-FPKM (and also TPM),Good adequacy
+Interspecific,TMM-TPM,Good adequacy
+Yeast,TPM,Good adequacy
