@@ -116,3 +116,9 @@ violin <- fuse_df %>% pivot_longer(cols = c(-model), names_to = "test.stat") %>%
 saveRDS(fuse_df,"./Arbutus_Exploration/RDSfiles/Exploration3_data.rds")
 
 ggsave("Arbutus_Exploration/violin_all_models.png", plot = violin)
+
+hist <- fuse_df %>% select(!m.sig) %>% pivot_longer(cols = !(model), names_to = "statistic", values_to = "pvalue") %>%
+  ggplot(aes(x = pvalue)) + geom_histogram(aes(y = ..density..)) + geom_vline(xintercept = 0.05, color = "red") +
+  facet_grid(rows = vars(model), cols = vars(statistic), scales = "free_y") + scale_y_continuous(labels = NULL) + theme_bw() 
+
+ggsave("Arbutus_Exploration/histogram_all_models.png", plot = hist)
