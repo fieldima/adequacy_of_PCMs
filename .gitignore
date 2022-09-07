@@ -22,3 +22,12 @@
 *fit_female
 *fit_male
 *fit_br
+*.faa
+*.phr
+*.pin
+*.psq
+*RSEM.isoforms.results
+*RSEM.genes.results
+*AllSeqs*
+/Normalization_Reanalysis/Ortho_Assessment/
+/Normalization_Reanalysis/Slimmed_Results/
