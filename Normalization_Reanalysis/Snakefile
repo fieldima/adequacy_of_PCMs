@@ -1,0 +1,86 @@
+#SnakeFile for Crayfish
+configfile: "config.yaml"
+
+CRAY = ["CDUBI", "CCRYP", "CGRAY", "CHAMU", "CRUST", "CSETO", "CTENE", "OAUST", "OINCO", "PFALL", "PHORS", "PLUCI", "PPALL"]
+NUMS = ["1","2"]
+SRA = ["22","23","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56"]
+
+rule all:
+	input:
+		"Results/TPM_data.tsv"
+
+rule trim_reads:
+	input:
+		a = config["RNA"] + "SRR71249{sra}_1.fastq",
+		b = config["RNA"] + "SRR71249{sra}_2.fastq"
+	output:
+		c = config["RNA"] + "SRR71249{sra}_1_trimmed.fastq",
+		d = config["RNA"] + "SRR71249{sra}_1_unpaired.fastq",
+		e = config["RNA"] + "SRR71249{sra}_2_trimmed.fastq",
+		f = config["RNA"] + "SRR71249{sra}_2_unpaired.fastq"
+	threads: 12
+	shell:
+		"trimmomatic PE -threads {threads} {input.a} {input.b} {output.c} {output.d} {output.e} {output.f} ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36"
+
+rule pool_species:
+	input:
+		expand(config["RNA"] + "SRR71249{sra}_{num}_trimmed.fastq", sra=SRA, num=NUMS)
+	output:
+		expand(config["RNA"] + "{cray}_left.fastq", cray=CRAY),
+		expand(config["RNA"] + "{cray}_right.fastq", cray=CRAY)
+	shell:
+		"bash Scripts/pool_script.sh"
+	
+rule make_transcriptomes:
+	input:
+		left = config["RNA"] + "{species}_left.fastq",
+		right = config["RNA"] + "{species}_right.fastq"
+	output:
+		file = "Trinity/trinity_{species}/trinity_{species}.Trinity.fasta"
+	params:
+		"Trinity/trinity_{species}"
+	threads: 12
+	shell: 
+		"Trinity --seqType fq --max_memory 10G --left {input.left} --right {input.right} --SS_lib_type FR --CPU {threads} --output {params} --full_cleanup"
+
+rule cluster_seqs:
+	input:
+		transcriptome = "Trinity/trinity_{species}/trinity_{species}.Trinity.fasta"
+	output:
+		clust = "Trinity/trinity_{species}/clust_{species}.fasta"
+	shell:
+		"cd-hit-est -i {input.transcriptome} -o {output.clust} -T 24"
+	
+rule get_orthologs:
+	input: 
+		expand("Trinity/trinity_{cray}/clust_{cray}.fasta", cray=CRAY)
+	output:
+		config["working_dir"] + "Trinity/Orthofinder/Orthogroups.tsv",
+		config["working_dir"] + "Trinity/Orthofinder/Orthogroups_SingleCopyOrthologues.txt"
+	params:
+		"Trinity"
+	shell:
+		"bash Scripts/move_files.sh && orthofinder -d -f {params}"
+		
+rule get_counts:
+	input:
+		transcriptome = "Trinity/trinity_{species}/clust_{species}.fasta",
+		left = config["RNA"] + "{species}_left.fastq",
+		right = config["RNA"] + "{species}_right.fastq"
+	output:
+		"Results/trinity_{species}/{rsem}.isoforms.results"
+	params:
+		"Results/trinity_{species}/"
+	shell:
+		"/home/fieldima/miniconda3/pkgs/trinity-2.1.1-6/opt/trinity-2.1.1/util/align_and_estimate_abundance.pl --transcripts {input.transcriptome} --seqType fq --left {input.left} --right {input.right} --est_method RSEM --aln_method bowtie --trinity_mode --prep_reference --output_dir {params}"
+
+rule make_matrices:
+	input:
+		ogs = config["working_dir"] + "Trinity/Orthofinder/Orthogroups.tsv",	
+		sc_ogs = config["working_dir"] + "Trinity/Orthofinder/Orthogroups_SingleCopyOrthologues.txt",
+		path = config["working_dir"] + "Results/"
+	output:
+		"Results/TPM_data.tsv",	
+		"Results/FPKM_data.tsv"
+	script:
+		"Scripts/orthogroup_matrix.R"

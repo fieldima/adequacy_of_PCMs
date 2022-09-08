@@ -1,0 +1,8 @@
+# Set your configuration paths here
+ 
+#This is the directory containing the RNA Seq reads. Change this to wherever you are storing your raw reads.
+RNA: "..."
+
+#This is the current working directory, set it to wherever yours is
+working_dir: "/home/fieldima/R/adequacy_of_PCMs/Normalization_Reanalysis/"
+
