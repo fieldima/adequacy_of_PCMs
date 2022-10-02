@@ -27,8 +27,8 @@ readfile <- function(filename, fold="pvals"){
 
 pvals_brain <- map_df(pval_files, readfile)
 
-p_prot <- pvals_brain %>% select(!m.sig) %>% transmute(c.less = c.var <= 0.05, sv.less = s.var <= 0.05, sa.less = s.asr <= 0.05, sh.less = s.hgt <= 0.05 & !is.na(s.hgt), d.less = d.cdf <= 0.05) %>% transmute(inade = c.less + sv.less + sa.less + sh.less + d.less) %>% count(inade) %>% mutate(prop = n/sum(n)) %>% mutate(inade = as.character(inade), data = "protein")
-p_lnc <- readRDS("arbutus/pvals/pvals_br_lnc") %>% select(!m.sig) %>% transmute(c.less = c.var <= 0.05, sv.less = s.var <= 0.05, sa.less = s.asr <= 0.05, sh.less = s.hgt <= 0.05 & !is.na(s.hgt), d.less = d.cdf <= 0.05) %>% transmute(inade = c.less + sv.less + sa.less + sh.less + d.less) %>% count(inade) %>% mutate(prop = n/sum(n)) %>% mutate(inade = as.character(inade), data = "lnc")
+p_prot <- pvals_brain %>% transmute(c.less = c.var <= 0.05, sv.less = s.var <= 0.05, sa.less = s.asr <= 0.05, sh.less = s.hgt <= 0.05 & !is.na(s.hgt), d.less = d.cdf <= 0.05) %>% transmute(inade = c.less + sv.less + sa.less + sh.less + d.less) %>% count(inade) %>% mutate(prop = n/sum(n)) %>% mutate(inade = as.character(inade), data = "protein")
+p_lnc <- readRDS("arbutus/pvals/pvals_br_lnc")  %>% transmute(c.less = c.var <= 0.05, sv.less = s.var <= 0.05, sa.less = s.asr <= 0.05, sh.less = s.hgt <= 0.05 & !is.na(s.hgt), d.less = d.cdf <= 0.05) %>% transmute(inade = c.less + sv.less + sa.less + sh.less + d.less) %>% count(inade) %>% mutate(prop = n/sum(n)) %>% mutate(inade = as.character(inade), data = "lnc")
 
 p_df <- full_join(p_prot, p_lnc) 
 
@@ -148,6 +148,21 @@ figure5b
 Inadequacy of the data remains high even while using a BMS model, showing other factors may be at play causing inadequacies in c.var. I then wanted to quantify the effect of the addition of BMS.
 
 ```{r, include = FALSE}
+pval_files <- list.files("arbutus/pvals")
+
+readfile <- function(filename){
+  res <- readRDS(paste0("arbutus/pvals/", filename))
+  res
+}
+
+readfile2 <- function(filename){
+  res <- readRDS(paste0("arbutus/multirate/pvals/", filename))
+  res
+}
+
+pvals_brain <- map_df(pval_files, readfile)
+pvals_brain_bms <- map_df(list.files("arbutus/multirate/pvals/"), readfile2)
+
 p_uni <- pvals_brain %>% transmute(c.less = c.var <= 0.05, sv.less = s.var <= 0.05, sa.less = s.asr <= 0.05, sh.less = s.hgt <= 0.05 & !is.na(s.hgt), d.less = d.cdf <= 0.05) %>% transmute(inade = c.less + sv.less + sa.less + sh.less + d.less) %>% count(inade) %>% mutate(prop = n/sum(n)) %>% mutate(inade = as.character(inade), data = "w/o BMS")
 p_bms <- pvals_brain_bms %>% transmute(c.less = c.var <= 0.05, sv.less = s.var <= 0.05, sa.less = s.asr <= 0.05, sh.less = s.hgt <= 0.05 & !is.na(s.hgt), d.less = d.cdf <= 0.05) %>% transmute(inade = c.less + sv.less + sa.less + sh.less + d.less) %>% count(inade) %>% mutate(prop = n/sum(n)) %>% mutate(inade = as.character(inade), data = "w/ BMS")
 

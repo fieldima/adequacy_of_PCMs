@@ -9,7 +9,10 @@ library(parallel)
 path <- "cichlids/expression_data_and_trees/CichlidX_TPM_GeneExpressionMatrix_"
 path2 <- "cichlids/expression_data_and_trees/"
 
-br_data <- read.delim(paste0(path, "BR",".txt"))
+noInf <- function(x) if(x == -Inf) 0 else x
+noInf2 <- Vectorize(noInf)
+
+br_data <- read.delim(paste0(path, "BR",".txt")) %>% mutate(across(everything(), log)) %>% mutate(across(everything(), noInf2))
 
 #Annotate genes vs lnc
 dictionary <- read.delim(paste0(path2, "GCF_001858045.1_ASM185804v2_genomic_gtf_gene.txt")) %>%
