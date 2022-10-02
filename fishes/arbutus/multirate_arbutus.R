@@ -12,7 +12,10 @@ tree <- read.tree("fishes/data/recodedTreeNamed.tre") %>% chronoMPL()
 OUwie_reg <- c(1,2,2,1,2,1,2,1,2,1,1,2,1,2,2,1,1,2,1,2)
 daf <- data.frame(Genus_species = tree$tip.label, Reg = OUwie_reg)
 
-data_ave <- read.csv("fishes/data/master_fpkm.csv", row.names = 1) %>% rownames_to_column("genes") %>% group_by(genes)%>%
+noInf <- function(x) if(x == -Inf) 0 else x
+noInf2 <- Vectorize(noInf)
+
+data_ave <- read.csv("fishes/data/master_fpkm.csv", row.names = 1) %>% mutate(across(everything(), log)) %>% mutate(across(everything(), noInf2)) %>% rownames_to_column("genes") %>% group_by(genes)%>%
   transmute(GholNS = mean(c(GholNS_1, GholNS_2, GholNS_3, GholNS_4, GholNS_5, GholNS_6)),
             GsexNS = mean(c(GsexNS_1, GsexNS_2, GsexNS_3, GsexNS_4, GsexNS_5, GsexNS_6)),
             PbimNS = mean(c(PbimNS_1, PbimNS_2, PbimNS_3, PbimNS_4, PbimNS_5, PbimNS_6)),
@@ -123,4 +126,4 @@ total_process <- function (dat_obj){
 }
 
 data_modified <- number(data_ave, data_SE)
-mclapply(data_modified, total_process, mc.cores = 10)
+mclapply(data_modified, total_process, mc.cores = 4)
