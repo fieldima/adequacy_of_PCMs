@@ -16,7 +16,10 @@ species_phylo$tip.label <- gsub("_", " ", species_phylo$tip.label)
 amniote_RPKM <- read.delim("Mammal_organs/Supplementary_Data1/NormalizedRPKM_ConstitutiveAlignedExons_Amniote1to1Orthologues.txt")
 
 #Split into body parts
-br_dat <- amniote_RPKM %>% select(hsa,contains(".br.")) 
+br_dat <- amniote_RPKM %>% select(hsa,contains(".br.")) %>% pivot_longer(cols = !c(hsa), values_to = "RPKM") %>%
+  mutate(RPKM = log(RPKM), RPKM = replace(RPKM, RPKM == -Inf, 0)) %>% 
+  pivot_wider(names_from = name, values_from = RPKM) 
+
 cb_dat <- amniote_RPKM %>% select(hsa,contains(".cb."))
 ht_dat <- amniote_RPKM %>% select(hsa,contains(".ht."))
 kd_dat <- amniote_RPKM %>% select(hsa,contains(".kd."))
@@ -164,8 +167,8 @@ total_process <- function (dat_list){
   SE <- dat_list[[3]]
   exp <- format_expr_data(avgdat)
   fit <- runFC(exp, SE)
-  #fit_name <- paste0("Mammal_organs/species_phylogeny/arbutus/fit_", part)
-  #saveRDS(fit, file = fit_name)
+  fit_name <- paste0("Mammal_organs/species_phylogeny/arbutus/fit_", part)
+  saveRDS(fit, file = fit_name)
   df <- model_count(fit)
   aic_name <- paste0("Mammal_organs/species_phylogeny/AIC/AIC_", part, ".png")
   df %>% ggplot(aes(model, value)) + geom_col() + theme_classic()
@@ -187,4 +190,4 @@ lv_list <- list(lv_avg_dat, "lv", lv_SE)
 ts_list <- list(ts_avg_dat, "ts", ts_SE)
 all_list <- list(br_list, cb_list, ht_list, kd_list, lv_list, ts_list)
 
-mclapply(all_list, total_process, mc.cores = 6)
+mclapply(all_list, total_process, mc.cores = 2)

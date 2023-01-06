@@ -284,6 +284,35 @@ figure7
 
 While using species trees produces more NA values for the S.hgt statistic than gene trees, less genes overall are found to have phylogenetic significance for gene trees. This may suggest that the lower-resolution species trees may be producing false positive signal. Alternatively, this may actually just show that using gene phylogenies causes data to have more BM-like properties
 
+```{r}
+
+pvals_single <- readRDS("species_phylogeny/arbutus/pvals_br")
+pvals_multi <- readRDS("species_phylogeny/arbutus/BMS/pvals_br")
+test <- pvals_single %>% select(!m.sig) %>%
+  transmute(c.var = c.var <= 0.05, s.var = s.var <= 0.05,
+              s.asr = s.asr <= 0.05, s.hgt = s.hgt <= 0.05 & !is.na(s.hgt),
+              d.cdf = d.cdf <= 0.05) %>% drop_na() %>% summarise(across(.fns = ~sum(.x, na.rm = TRUE))) %>% pivot_longer(cols = everything(), names_to = "test statistic") %>% mutate(models = "w/o BMS")
+
+test2 <- pvals_multi %>% 
+  transmute(c.var = c.var <= 0.05, s.var = s.var <= 0.05,
+              s.asr = s.asr <= 0.05, s.hgt = s.hgt <= 0.05 & !is.na(s.hgt),
+              d.cdf = d.cdf <= 0.05) %>% drop_na() %>% summarise(across(.fns = ~sum(.x, na.rm = TRUE))) %>% pivot_longer(cols = everything(), names_to = "test statistic") %>% mutate(models = "w/ BMS")
+
+
+tables <- full_join(test, test2) 
+tables$models <- as.factor(tables$models) %>% fct_relevel("w/o BMS", "w/ BMS")
+
+tables_wBMS <- tables %>% filter(models == "w/ BMS") %>% mutate(value = value/nrow(pvals_multi), value = round(value, digits = 3))
+tables_woBMS <- tables %>% filter(models == "w/o BMS") %>% mutate(value = value/nrow(pvals_single), value = round(value, digits = 3))
+
+tables_tot <- full_join(tables_wBMS, tables_woBMS) 
+
+figure8 <- tables_tot %>% 
+  ggplot(aes(x = `test statistic`, y = value, fill = `test statistic`)) + geom_col() +
+  geom_text(aes(label = round(value, digits = 2)), size = 6) + facet_wrap(vars(models)) + theme_bw() + theme(strip.text = element_text(size = 15), legend.position = "none", axis.title = element_text(size = 15), axis.text = element_text(size = 15), panel.grid = element_blank()) + ylab("Proportion of Genes") + xlab("Test Statistic") + scale_fill_brewer(palette = "Set1")
+figure8
+```
+
 ## Conclusion
 
 ------------------------------------------------------------------------
