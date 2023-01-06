@@ -16,7 +16,7 @@ Each of the directories below contains an Analysis.md file that summarizes the f
 
 -   **snakes:** Analysis of toxin expression in snakes species from the paper entitled [Toxin expression in snake venom evolves rapidly with constant shift in evolutionary rates](https://royalsocietypublishing.org/doi/full/10.1098/rspb.2020.0613#d1e1203)
 
-### Miscellaneous 
+### Miscellaneous
 
 -   **Arbutus_Exploration:** This directory contains simulation data regarding the usage of Arbutus.
 
@@ -24,7 +24,7 @@ Each of the directories below contains an Analysis.md file that summarizes the f
 
     -   My second set of simulations; where I explored how adequate single rate models were for a truly multi-rate Brownian Motion process, are summarized in the document entitled: [Analysis-of-Mulirate-Models.md](https://github.com/pennell-lab-ubc/fiels_workbench/blob/main/Arbutus_Exploration/Analysis-of-Multirate-Models.md).
 
--    **Data_Recreation_Task:** This directory contains early work where I attempted to recreate some data via tree simulations from the `geiger` package.
+-   **Data_Recreation_Task:** This directory contains early work where I attempted to recreate some data via tree simulations from the `geiger` package.
 
 -   **debugging**: This directory was used to isolate the issues I was having with the performance of the M.sig test statistic in `arbutus` as well as S.hgt.
 
@@ -44,15 +44,14 @@ Each of the directories below contains an Analysis.md file that summarizes the f
 
 ### Summary Table
 
-| Data set                    | Number of Genes | Number of Species |
-|-----------------------------|-----------------|-------------------|
-| cichlids                    | 32,596          | 73                |
-| fishes                      | 16,740          | 20                |
-| Heliconius_Butterflies      | 2,393           | 5                 |
-| Mammal_organs               | 5,320           | 10                |
-| snakes                      | 11              | 52                |
-| comparative_expression_2017 | 8,333           | 9                 |
-| GeneExpression_coevolution  | 3,556           | 18                |
-| interspecific_rnaseq        | 3,560           | 14                |
-| amalgam data                | 1,377           | 21                |
-
+| Data set                    | Number of Genes | Number of Species | Multiple Samples |
+|-----------------------------|-----------------|-------------------|------------------|
+| cichlids                    | 32,596          | 73                | No               |
+| fishes                      | 16,740          | 20                | Yes              |
+| Heliconius_Butterflies      | 2,393           | 5                 | Yes              |
+| Mammal_organs               | 5,320           | 10                | Yes              |
+| snakes                      | 11              | 52                | No               |
+| comparative_expression_2017 | 8,333           | 9                 | No               |
+| GeneExpression_coevolution  | 3,556           | 18                | No               |
+| interspecific_rnaseq        | 3,560           | 14                | Yes              |
+| amalgam data                | 1,377           | 21                | No               |
