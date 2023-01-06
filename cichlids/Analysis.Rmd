@@ -160,21 +160,48 @@ readfile2 <- function(filename){
   res
 }
 
+readfile3 <- function(filename){
+  res <- readRDS(paste0("arbutus/multirate/pvals/old/", filename))
+  res
+}
+
 pvals_brain <- map_df(pval_files, readfile)
-pvals_brain_bms <- map_df(list.files("arbutus/multirate/pvals/"), readfile2)
+pvals_brain_bms <- list.files("arbutus/multirate/pvals/") %>% grep(pattern = "^p", value = TRUE, x = .) %>%  map_df(readfile2) %>% slice_head(n = nrow(pvals_brain))
+pvals_bms_old <- list.files("arbutus/multirate/pvals/old/") %>% map_df(readfile3)
 
 p_uni <- pvals_brain %>% transmute(c.less = c.var <= 0.05, sv.less = s.var <= 0.05, sa.less = s.asr <= 0.05, sh.less = s.hgt <= 0.05 & !is.na(s.hgt), d.less = d.cdf <= 0.05) %>% transmute(inade = c.less + sv.less + sa.less + sh.less + d.less) %>% count(inade) %>% mutate(prop = n/sum(n)) %>% mutate(inade = as.character(inade), data = "w/o BMS")
 p_bms <- pvals_brain_bms %>% transmute(c.less = c.var <= 0.05, sv.less = s.var <= 0.05, sa.less = s.asr <= 0.05, sh.less = s.hgt <= 0.05 & !is.na(s.hgt), d.less = d.cdf <= 0.05) %>% transmute(inade = c.less + sv.less + sa.less + sh.less + d.less) %>% count(inade) %>% mutate(prop = n/sum(n)) %>% mutate(inade = as.character(inade), data = "w/ BMS")
+p_bms_old <- pvals_bms_old %>% transmute(c.less = c.var <= 0.05, sv.less = s.var <= 0.05, sa.less = s.asr <= 0.05, sh.less = s.hgt <= 0.05 & !is.na(s.hgt), d.less = d.cdf <= 0.05) %>% transmute(inade = c.less + sv.less + sa.less + sh.less + d.less) %>% count(inade) %>% mutate(prop = n/sum(n)) %>% mutate(inade = as.character(inade), data = "w/ BMS old")
 
-p_all <- full_join(p_uni, p_bms)
+p_all <- full_join(p_uni, p_bms) %>% full_join(p_bms_old)
 
 figure6 <- p_all %>% ggplot(aes(x = inade, y = n, fill = inade)) + geom_bar(stat = "identity") + geom_text(aes(label = round(prop, digits = 2))) +
   xlab("Number of inadequacies") + ylab("Number of genes") + ggtitle("Amount of genes by number of inadequacies with and without BMS models") + facet_wrap(~data, scales = "free") + theme_bw() 
+
+test1 <- pvals_brain_bms %>% transmute(c.var = c.var <= 0.05, s.var = s.var <= 0.05,
+              s.asr = s.asr <= 0.05, s.hgt = s.hgt <= 0.05 & !is.na(s.hgt),
+              d.cdf = d.cdf <= 0.05) %>% drop_na() %>% summarise(across(.fns = ~sum(.x, na.rm = TRUE))) %>% pivot_longer(cols = everything(), names_to = "test statistic") %>% 
+  mutate(value = value/nrow(pvals_brain_bms), value = round(value, digits = 3), model = "w/ BMS")
+test2 <- pvals_brain %>% transmute(c.var = c.var <= 0.05, s.var = s.var <= 0.05,
+              s.asr = s.asr <= 0.05, s.hgt = s.hgt <= 0.05 & !is.na(s.hgt),
+              d.cdf = d.cdf <= 0.05) %>% drop_na() %>% summarise(across(.fns = ~sum(.x, na.rm = TRUE))) %>% pivot_longer(cols = everything(), names_to = "test statistic") %>% 
+  mutate(value = value/nrow(pvals_brain), value = round(value, digits = 3), model ="w/o BMS")
+
+test1.2 <- pvals_bms_old %>% transmute(c.var = c.var <= 0.05, s.var = s.var <= 0.05,
+              s.asr = s.asr <= 0.05, s.hgt = s.hgt <= 0.05 & !is.na(s.hgt),
+              d.cdf = d.cdf <= 0.05) %>% drop_na() %>% summarise(across(.fns = ~sum(.x, na.rm = TRUE))) %>% pivot_longer(cols = everything(), names_to = "test statistic") %>% 
+  mutate(value = value/nrow(pvals_bms_old), value = round(value, digits = 3), model = "w/ BMS old")
+
+test3 <- full_join(test1,test2) %>% full_join(test1.2) %>% mutate(model = as.factor(model), model = fct_relevel(model, "w/o BMS", "w/ BMS", "w/ BMS old"))
+
+figure2.7d <- test3 %>% ggplot(aes(y = value, x = `test statistic`, fill = `test statistic`)) + geom_col() + geom_text(aes(label = round(value, digits = 2)), size = 6) +
+  xlab("Test Statistic") + ylab("Proportion of Genes") + facet_wrap(~model) + theme_bw() + theme(strip.text = element_text(size = 15), legend.position = "none", axis.title = element_text(size = 15), axis.text = element_text(size = 15), title = element_text(size = 20), panel.grid = element_blank()) + scale_fill_brewer(palette = "Set1")
 
 ```
 
 ```{r, echo=FALSE}
 figure6
+figure2.7d
 ```
 
 **Figure 6: Addition of a multi-rate BM process does little to lower the inadequacies found in the data, with similar proportions of inadequacies before and after usage.**

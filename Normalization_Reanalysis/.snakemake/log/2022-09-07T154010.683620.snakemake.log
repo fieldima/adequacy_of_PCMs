@@ -1,8 +1,0 @@
-Building DAG of jobs...
-MissingInputException in rule trim_reads in line 12 of /home/fieldima/R/adequacy_of_PCMs/Normalization_Reanalysis/Snakefile:
-Missing input files for rule trim_reads:
-    output: ...SRR7124922_1_trimmed.fastq, ...SRR7124922_1_unpaired.fastq, ...SRR7124922_2_trimmed.fastq, ...SRR7124922_2_unpaired.fastq
-    wildcards: sra=22
-    affected files:
-        ...SRR7124922_2.fastq
-        ...SRR7124922_1.fastq
