@@ -6,6 +6,8 @@ library(tidyverse)
 library(flipR)
 library(parallel)
 
+print("Butterflies")
+
 #Load the data
 tr <- read.nexus("Heliconius_Butterflies/Data/Heliconiini.multiple_uniform_constraints.MCC.tree")
 plot(tr)
@@ -19,7 +21,11 @@ tree$tip.label <- c("Heliconius_charithonia", "Heliconius_doris", "Heliconius_er
 
 plot(tree)
 
-exp_matr <- read.csv("Heliconius_Butterflies/Data/expression_matrix.csv") #%>%
+
+noInf <- function(x) if(x == -Inf) 0 else x
+noInf2 <- Vectorize(noInf)
+
+exp_matr <- read.csv("Heliconius_Butterflies/Data/expression_matrix.csv") %>% mutate(across(-Orthogroups, log)) %>% mutate(across(everything(), noInf2))
 
 #Split into sexes
 female_dat <- exp_matr %>% as.data.frame() %>% select(Orthogroups, contains("_F"))

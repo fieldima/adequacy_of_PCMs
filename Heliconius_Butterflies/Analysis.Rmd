@@ -35,6 +35,8 @@ p_df2 <- full_join(p_male2, p_female2)
 
 figure1b <- p_df2 %>% ggplot(aes(x = inade, y = n, fill = inade)) + geom_bar(stat = "identity") + geom_text(aes(label = round(prop, digits = 2))) +
   xlab("Number of inadequacies") + ylab("Number of genes") + labs(tag = "B") + ggtitle("Amount of genes by number of inadequacies with BMS model") + facet_grid(~sex) + theme_bw() 
+
+
 ```
 
 ```{r}
