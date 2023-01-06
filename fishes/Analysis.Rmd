@@ -25,27 +25,48 @@ readfile <- function(filename){
   res
 }
 
+readfile2 <- function(filename){
+  res <- readRDS(paste0("arbutus/multirate/pvals/", filename))
+  res
+}
+
 pvals_total <- map_df(pval_files, readfile)
 
 p_df <- pvals_total %>% select(!m.sig) %>% transmute(c.less = c.var <= 0.05, sv.less = s.var <= 0.05, sa.less = s.asr <= 0.05, sh.less = s.hgt <= 0.05 & !is.na(s.hgt), d.less = d.cdf <= 0.05) %>% transmute(inade = c.less + sv.less + sa.less + sh.less + d.less) %>% count(inade) %>% mutate(prop = n/sum(n)) %>% mutate(inade = as.character(inade))
 
-figure1 <- p_df %>% ggplot(aes(x = inade, y = n, fill = inade)) + geom_bar(stat = "identity") + geom_text(aes(label = round(prop, digits = 2))) +
-  xlab("Number of inadequacies") + ylab("Number of genes") + labs(tag = "A") + ggtitle("Amount of genes by number of inadequacies without BMS model")  + theme_bw() 
+figure1 <- p_df %>% ggplot(aes(x = inade, y = n)) + geom_bar(stat = "identity", fill = "#E5B80B") + geom_text(aes(label = round(prop, digits = 2)), size = 6) +
+  xlab("Number of inadequacies") + ylab("Number of genes") + theme_classic() + theme(strip.text = element_text(size = 15), legend.position = "none", axis.title = element_text(size = 15), axis.text = element_text(size = 15), title = element_text(size = 20), plot.title = element_text(hjust = 0.5)) + ggtitle("W/o BMS") + scale_fill_brewer(palette = "Set2")
 
-pvals_multi <- readRDS("arbutus/multirate/pvals/pvals_all.rds")
+
+pvals_multi <- list.files("arbutus/multirate/pvals/") %>% grep("^p", value = TRUE, x = .) %>% map_df(readfile2)
+pvals_motmot <- list.files("arbutus/multirate/pvals/") %>% grep("^m", value = TRUE, x = .) %>% map_df(readfile2)
 
 na_total <- pvals_total %>% select(s.hgt) %>% filter(is.na(s.hgt)) %>% summarise(`test statistic` = "s.hgt NAs", value = n(), models = "w/o BMS")
 na_multi <- pvals_multi %>% select(s.hgt) %>% filter(is.na(s.hgt)) %>% summarise(`test statistic` = "s.hgt NAs", value = n(), models = "w/ BMS")
 
-p_dfb <- pvals_multi %>% transmute(c.less = c.var <= 0.05, sv.less = s.var <= 0.05, sa.less = s.asr <= 0.05, sh.less = s.hgt <= 0.05 & !is.na(s.hgt), d.less = d.cdf <= 0.05) %>% transmute(inade = c.less + sv.less + sa.less + sh.less + d.less) %>% count(inade) %>% mutate(prop = n/sum(n)) %>% mutate(inade = as.character(inade), sex = "male")
+p_dfb <- pvals_multi %>% select(!m.sig) %>% transmute(c.less = c.var <= 0.05, sv.less = s.var <= 0.05, sa.less = s.asr <= 0.05, sh.less = s.hgt <= 0.05 & !is.na(s.hgt), d.less = d.cdf <= 0.05) %>% transmute(inade = c.less + sv.less + sa.less + sh.less + d.less) %>% count(inade) %>% mutate(prop = n/sum(n)) %>% mutate(inade = as.character(inade))
 
-figure1b <- p_dfb %>% ggplot(aes(x = inade, y = n, fill = inade)) + geom_bar(stat = "identity") + geom_text(aes(label = round(prop, digits = 2))) +
-  xlab("Number of inadequacies") + ylab("Number of genes") + labs(tag = "B") + ggtitle("Amount of genes by number of inadequacies with BMS model") + theme_bw() 
+figure1b <- p_dfb %>% ggplot(aes(x = inade, y = n)) + geom_bar(stat = "identity", fill = "#E5B80B") + geom_text(aes(label = round(prop, digits = 2)), size = 6) +
+  xlab("Number of inadequacies") + ylab("Number of genes") + theme_classic() + theme(strip.text = element_text(size = 15), legend.position = "none", axis.title = element_text(size = 15), axis.text = element_text(size = 15), title = element_text(size = 20), plot.title = element_text(hjust = 0.5)) + ggtitle("W/ BMS") + scale_fill_brewer(palette = "Set2")
+
+p_dfc <- pvals_motmot %>% select(!m.sig) %>% transmute(c.less = c.var <= 0.05, sv.less = s.var <= 0.05, sa.less = s.asr <= 0.05, sh.less = s.hgt <= 0.05 & !is.na(s.hgt), d.less = d.cdf <= 0.05) %>% transmute(inade = c.less + sv.less + sa.less + sh.less + d.less) %>% count(inade) %>% mutate(prop = n/sum(n)) %>% mutate(inade = as.character(inade))
+
+figure1c <- p_dfc %>% ggplot(aes(x = inade, y = n)) + geom_bar(stat = "identity", fill = "#E5B80B") + geom_text(aes(label = round(prop, digits = 2)), size = 6) +
+  xlab("Number of inadequacies") + ylab("Number of genes") + theme_classic() + theme(strip.text = element_text(size = 15), legend.position = "none", axis.title = element_text(size = 15), axis.text = element_text(size = 15), title = element_text(size = 20), plot.title = element_text(hjust = 0.5)) + ggtitle("W/ Motmot") + scale_fill_brewer(palette = "Set2")
+
+pvals_total2 <- pvals_total %>% mutate(Type = "noBMS")
+pvals_multi2 <- pvals_multi %>% mutate(Type = "BMS")
+pvals_motmot2 <- pvals_motmot %>% mutate(Type = "Motmot")
+
+pvals_all <- full_join(pvals_total2, pvals_multi2) %>% full_join(pvals_motmot2) %>% pivot_longer(cols = -c(Type), names_to = "Tstat", values_to = "Pvals") %>% filter(!Tstat == "m.sig")
+
+pvals_all %>% ggplot(aes(x = Pvals)) + geom_histogram() + facet_grid(rows = vars(Type), cols = vars(Tstat))
 ```
 
 ```{r, echo=FALSE}
 figure1
 figure1b
+figure1c
 ```
 
 **Figure 1: Using the best-fit model (chosen by AIC) shows a low adequacy for the data set. A)** Without the addition of a multi-rate Brownian Motion model shows less than half of genes being fully adequate. **B)** The addition of a multi-rate Brownian Motion model increases the adequacy of the data set to just over half.
@@ -86,28 +107,87 @@ I then performed relative and absolute fit analysis in line with the previous an
 Overall it seems that the new, multi-rate model fits the data better in a relative sense, and seems to cause changes in inadequacies. Specifically, it causes less issues with c.var. I then wanted to analyze what changes were causing the overall adequacy to increase when using a BMS model; what was the BMS model adding to the absolute fit?
 
 ```{r, include=FALSE}
-test <- pvals_total %>% select(!m.sig) %>% drop_na() %>%
+test <- pvals_total %>% select(!m.sig) %>%
   transmute(c.var = c.var <= 0.05, s.var = s.var <= 0.05,
               s.asr = s.asr <= 0.05, s.hgt = s.hgt <= 0.05 & !is.na(s.hgt),
               d.cdf = d.cdf <= 0.05) %>% drop_na() %>% summarise(across(.fns = ~sum(.x, na.rm = TRUE))) %>% pivot_longer(cols = everything(), names_to = "test statistic") %>% mutate(models = "w/o BMS")
 
-test2 <- pvals_multi %>% drop_na() %>%
+test2 <- pvals_multi %>% 
   transmute(c.var = c.var <= 0.05, s.var = s.var <= 0.05,
               s.asr = s.asr <= 0.05, s.hgt = s.hgt <= 0.05 & !is.na(s.hgt),
               d.cdf = d.cdf <= 0.05) %>% drop_na() %>% summarise(across(.fns = ~sum(.x, na.rm = TRUE))) %>% pivot_longer(cols = everything(), names_to = "test statistic") %>% mutate(models = "w/ BMS")
 
-tables <- full_join(test, test2) %>% full_join(na_multi) %>% full_join(na_total)
-tables$models <- as.factor(tables$models) %>% fct_relevel("w/o BMS", "w/ BMS")
+test3 <- pvals_motmot %>% 
+  transmute(c.var = c.var <= 0.05, s.var = s.var <= 0.05,
+              s.asr = s.asr <= 0.05, s.hgt = s.hgt <= 0.05 & !is.na(s.hgt),
+              d.cdf = d.cdf <= 0.05) %>% drop_na() %>% summarise(across(.fns = ~sum(.x, na.rm = TRUE))) %>% pivot_longer(cols = everything(), names_to = "test statistic") %>% mutate(models = "w/ Motmot")
 
+tables <- full_join(test, test2) %>% full_join(test3)
+tables$models <- as.factor(tables$models) %>% fct_relevel("w/o BMS", "w/ BMS", "w/ Motmot")
 
-figure5 <- tables %>% 
+tables_wBMS <- tables %>% filter(models == "w/ BMS") %>% mutate(value = value/nrow(pvals_multi), value = round(value, digits = 3))
+tables_woBMS <- tables %>% filter(models == "w/o BMS") %>% mutate(value = value/nrow(pvals_total), value = round(value, digits = 3))
+tables_motmot <- tables %>% filter(models == "w/ Motmot") %>% mutate(value = value/nrow(pvals_total), value = round(value, digits = 3))
+
+tables_tot <- full_join(tables_wBMS, tables_woBMS) %>% full_join(tables_motmot)
+
+figure5 <- tables_tot %>% 
   ggplot(aes(x = `test statistic`, y = value, fill = `test statistic`)) + geom_col() +
-  geom_text(aes(label = round(value, digits = 2))) + facet_wrap(vars(models)) + theme_bw() + ylab("Number of genes with an inadequacy") + ggtitle("Number of inadequacies by test statistic with and without BMS model") + xlab("Test Statistic")
+  geom_text(aes(label = round(value, digits = 2)), size = 6) + facet_wrap(vars(models)) + theme_bw() + theme(strip.text = element_text(size = 15), legend.position = "none", axis.title = element_text(size = 15), axis.text = element_text(size = 15), panel.grid = element_blank()) + ylab("Proportion of Genes") + xlab("Test Statistic") + scale_fill_brewer(palette = "Set1")
 
 ```
 
 ```{r, echo=FALSE}
 figure5
+```
+
+```{r, include=FALSE}
+readfile <- function(filename){
+  res <- readRDS(paste0("arbutus/compressed/pvals/", filename))
+  res
+}
+
+readfile2 <- function(filename){
+  res <- readRDS(paste0("arbutus/multirate/compressed/pvals/", filename))
+  res
+}
+
+pvals_total <- list.files("arbutus/compressed/pvals/") %>% map_df(readfile)
+pvals_multi <- list.files("arbutus/multirate/compressed/pvals/") %>% grep("^p", value = TRUE, x = .) %>% map_df(readfile2)
+pvals_motmot <- list.files("arbutus/multirate/compressed/pvals/") %>% grep("^m", value = TRUE, x = .) %>% map_df(readfile2)
+
+test <- pvals_total %>% select(!m.sig) %>%
+  transmute(c.var = c.var <= 0.05, s.var = s.var <= 0.05,
+              s.asr = s.asr <= 0.05, s.hgt = s.hgt <= 0.05 & !is.na(s.hgt),
+              d.cdf = d.cdf <= 0.05) %>% drop_na() %>% summarise(across(.fns = ~sum(.x, na.rm = TRUE))) %>% pivot_longer(cols = everything(), names_to = "test statistic") %>% mutate(models = "w/o BMS")
+
+test2 <- pvals_multi %>% 
+  transmute(c.var = c.var <= 0.05, s.var = s.var <= 0.05,
+              s.asr = s.asr <= 0.05, s.hgt = s.hgt <= 0.05 & !is.na(s.hgt),
+              d.cdf = d.cdf <= 0.05) %>% drop_na() %>% summarise(across(.fns = ~sum(.x, na.rm = TRUE))) %>% pivot_longer(cols = everything(), names_to = "test statistic") %>% mutate(models = "w/ BMS")
+
+test3 <- pvals_motmot %>% 
+  transmute(c.var = c.var <= 0.05, s.var = s.var <= 0.05,
+              s.asr = s.asr <= 0.05, s.hgt = s.hgt <= 0.05 & !is.na(s.hgt),
+              d.cdf = d.cdf <= 0.05) %>% drop_na() %>% summarise(across(.fns = ~sum(.x, na.rm = TRUE))) %>% pivot_longer(cols = everything(), names_to = "test statistic") %>% mutate(models = "w/ Motmot")
+
+tables <- full_join(test, test2) %>% full_join(test3)
+tables$models <- as.factor(tables$models) %>% fct_relevel("w/o BMS", "w/ BMS", "w/ Motmot")
+
+tables_wBMS <- tables %>% filter(models == "w/ BMS") %>% mutate(value = value/nrow(pvals_multi), value = round(value, digits = 3))
+tables_woBMS <- tables %>% filter(models == "w/o BMS") %>% mutate(value = value/nrow(pvals_total), value = round(value, digits = 3))
+tables_motmot <- tables %>% filter(models == "w/ Motmot") %>% mutate(value = value/nrow(pvals_total), value = round(value, digits = 3))
+
+tables_tot <- full_join(tables_wBMS, tables_woBMS) %>% full_join(tables_motmot)
+
+figure6 <- tables_tot %>% 
+  ggplot(aes(x = `test statistic`, y = value, fill = `test statistic`)) + geom_col() +
+  geom_text(aes(label = round(value, digits = 2)), size = 6) + facet_wrap(vars(models)) + theme_bw() + theme(strip.text = element_text(size = 15), legend.position = "none", axis.title = element_text(size = 15), axis.text = element_text(size = 15), panel.grid = element_blank()) + ylab("Proportion of Genes") + xlab("Test Statistic") + scale_fill_brewer(palette = "Set1")
+
+```
+
+```{r, echo=FALSE}
+figure6
 ```
 
 **Figure 5. Number of inadequacies in the data set by test statistic.** Addition of BMS model decreased the number of inadequacies due to c.var and s.asr drastically. Slight increases in s.hgt and s.var, with d.cdf staying approximately equal.
